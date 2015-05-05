@@ -1,4 +1,5 @@
-import TwitterAPI, re, time, logging, os.path, unicodedata, sqlite3, os
+import TwitterAPI, re, time, logging, os.path, unicodedata, os, psycopg2, sqlite3
+from datetime import datetime
 from Queue import Queue
 from calendar import timegm
 
@@ -81,12 +82,11 @@ def clean_up_name(name):
 
 def change_time_format(timestamp):
     ''' Changes the time format. Example:
-        Sat Jun 07 14:38:49 +0000 2014 becomes
+        Sat Jun 07 14:38:49 +0100 2014 becomes
         14:38:49 Jun 07 2014 '''
 
-    t = time.strptime(timestamp, '%a %b %d %H:%M:%S +0000 %Y')
-    timestamp = timegm(t) #convert to seconds since the epoch
-    return timestamp
+    dt = datetime.strptime(timestamp, '%a %b %d %H:%M:%S +0000 %Y')
+    return dt
 
 
 def precheck_text(text):
@@ -178,21 +178,38 @@ def get_full_name_from_tweet_text(name, text, name_so_far, first_names, last_nam
 
 
 def get_latest_tweets(stream):
-    ''' The core function.
-        Returns a 4-tuple:
-        (time of the tweet, the extracted name, the full text of
-            the tweet and the the username of the person tweeting). '''
+    '''
+    The core function.
+
+    Returns a 5-tuple:
+        (time of the tweet, the timezone of the user, the extracted name, the
+        full text of the tweet and the the username of the person tweeting).
+    '''
 
     first_names, last_names, honorifics = get_names_from_files()
 
     for s in stream:
 
-        text, timestamp, user = s['text'], s['created_at'], s['user']['screen_name']
+        tweet_id, text, date_time, user, user_id, tz = (  s['id_str'],
+                                                         s['text'],
+                                                         s['created_at'],
+                                                         s['user']['screen_name'],
+                                                         s['user']['id_str'],
+                                                         s['user']['utc_offset'],
+                                               )
 
         cleaned_up_text = remove_user_mentions(text)
-        timestamp = change_time_format(timestamp)  # fix the timeformat
+        timestamp = change_time_format(date_time)  # fix the timeformat
+        timezone = tz / 3600 if tz is not None else None  # convert to hours if not null
 
-        tweet = {'text': text, 'time': timestamp, 'user': user, 'name': None, 'retweet': 0}
+        tweet = {'tweet_id': tweet_id,
+                 'text': text,
+                 'time': timestamp,
+                 'timezone': timezone,
+                 'user': user,
+                 'user_id': user_id,
+                 'name': None,
+                 'retweet': 0}
 
         if is_retweet(cleaned_up_text):
             tweet['retweet'] = 1
@@ -212,17 +229,13 @@ def get_latest_tweets(stream):
 
 
 def save_to_db(tweet, database):
-    tweet_values = tweet['text'], tweet['user'], tweet['time'], tweet['name'], tweet['retweet']
+
+    tweet_values = tweet['text'], tweet['user'], tweet['time'], tweet['name'], tweet['retweet'], tweet['timezone']
     conn = sqlite3.connect(database)
     c = conn.cursor()
-    c.execute('INSERT INTO tweet (text, user, time, name, retweet_status) VALUES (?,?,?,?,?)', tweet_values)
+    c.execute('INSERT INTO tweet (text, user, time, name, retweet_status, timezone) VALUES (?,?,?,?,?,?)', tweet_values)
     conn.commit()
     conn.close()
-
-
-def print_tweet(tweet):
-    # name = unicodedata.normalize('NFKD', name).encode('ascii','ignore')
-    print tweet['time'], '\n', tweet['name'], '\n', tweet['text'], '\n', tweet['user'], '\n\n'
 
 
 def main():
@@ -231,8 +244,9 @@ def main():
     stream = connect_to_streaming_API()
     tweets = get_latest_tweets(stream)
     for tweet in tweets:
+        print tweet
         save_to_db(tweet, database)
-        print_tweet(tweet)
+        # print_tweet(tweet)
 
 
 if __name__ == '__main__':
