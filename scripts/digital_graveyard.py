@@ -190,13 +190,13 @@ def get_latest_tweets(stream):
 
     for s in stream:
 
-        tweet_id, text, date_time, user, user_id, tz = (  s['id_str'],
+        tweet_id, text, date_time, user, user_id, tz = ( s['id_str'],
                                                          s['text'],
                                                          s['created_at'],
                                                          s['user']['screen_name'],
                                                          s['user']['id_str'],
                                                          s['user']['utc_offset'],
-                                               )
+                                                       )
 
         cleaned_up_text = remove_user_mentions(text)
         timestamp = change_time_format(date_time)  # fix the timeformat
@@ -209,10 +209,10 @@ def get_latest_tweets(stream):
                  'user': user,
                  'user_id': user_id,
                  'name': None,
-                 'retweet': 0}
+                 'is_retweet': 0}
 
         if is_retweet(cleaned_up_text):
-            tweet['retweet'] = 1
+            tweet['is_retweet'] = 1
 
         # check for the 'My' <somethingsomething> 'died', etc. pattern
         name = precheck_text(cleaned_up_text)
@@ -228,25 +228,49 @@ def get_latest_tweets(stream):
             yield tweet
 
 
-def save_to_db(tweet, database):
+def save_to_db(tweet):
 
-    tweet_values = tweet['text'], tweet['user'], tweet['time'], tweet['name'], tweet['retweet'], tweet['timezone']
-    conn = sqlite3.connect(database)
-    c = conn.cursor()
-    c.execute('INSERT INTO tweet (text, user, time, name, retweet_status, timezone) VALUES (?,?,?,?,?,?)', tweet_values)
+    tweet_values = (
+                     tweet['tweet_id']
+                     tweet['name'],
+                     tweet['text'],
+                     tweet['user'],
+                     tweet['user_id'],
+                     tweet['time'],
+                     tweet['timezone']
+                     tweet['is_retweet'],
+                   )
+
+    conn = psycopg2.connect(database="digital_graveyard",
+                            user="grabarz",
+                            password="testpassword",
+                            host="127.0.0.1",
+                            port=5432)
+
+    cursor = conn.cursor()
+    cursor.execute('''  INSERT INTO tweets
+                            TWEET_TWITTER_ID
+                            NAME
+                            TWEET
+                            USERNAME
+                            USER_TWITTER_ID
+                            TIME
+                            TIMEZONE
+                            IS_RETWEET)
+                        VALUES (%s,%s,%s,%s,%s,%s)''', tweet_values)
+
     conn.commit()
-    conn.close()
+    cursor.close()
+    conn.close()  # consider only closing the connection when the script crashes.
 
 
 def main():
 
-    database = os.path.join( '/Users/czapla/digital_graveyard/data/tweets.db')
     stream = connect_to_streaming_API()
     tweets = get_latest_tweets(stream)
     for tweet in tweets:
-        print tweet
-        save_to_db(tweet, database)
-        # print_tweet(tweet)
+        logger.log(logging.INFO, tweet)
+        save_to_db(tweet)
 
 
 if __name__ == '__main__':
