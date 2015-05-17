@@ -19,6 +19,7 @@ logger.addHandler(ch)
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
 
+
 def get_names_from_files():
     ''' Get the list of first names and last names from the files on disk. '''
 
@@ -209,10 +210,10 @@ def get_latest_tweets(stream):
                  'user': user,
                  'user_id': user_id,
                  'name': None,
-                 'is_retweet': 0}
+                 'is_retweet': False}
 
         if is_retweet(cleaned_up_text):
-            tweet['is_retweet'] = 1
+            tweet['is_retweet'] = True
 
         # check for the 'My' <somethingsomething> 'died', etc. pattern
         name = precheck_text(cleaned_up_text)
@@ -228,49 +229,65 @@ def get_latest_tweets(stream):
             yield tweet
 
 
-def save_to_db(tweet):
+def save_to_db(tweet, cursor):
+
+    time_inserted = int(time.time() * 1000000)
 
     tweet_values = (
-                     tweet['tweet_id']
+                     tweet['tweet_id'],
                      tweet['name'],
                      tweet['text'],
                      tweet['user'],
                      tweet['user_id'],
                      tweet['time'],
-                     tweet['timezone']
+                     tweet['timezone'],
                      tweet['is_retweet'],
+                     time_inserted
                    )
 
-    conn = psycopg2.connect(database="digital_graveyard",
-                            user="grabarz",
-                            password="testpassword",
-                            host="127.0.0.1",
-                            port=5432)
-
-    cursor = conn.cursor()
-    cursor.execute('''  INSERT INTO tweets
-                            TWEET_TWITTER_ID
-                            NAME
-                            TWEET
-                            USERNAME
-                            USER_TWITTER_ID
-                            TIME
-                            TIMEZONE
-                            IS_RETWEET)
-                        VALUES (%s,%s,%s,%s,%s,%s)''', tweet_values)
-
-    conn.commit()
-    cursor.close()
-    conn.close()  # consider only closing the connection when the script crashes.
+    cursor.execute('''  INSERT INTO core.tweets
+                        (
+                            TWEET_TWITTER_ID,
+                            NAME,
+                            TWEET,
+                            USERNAME,
+                            USER_TWITTER_ID,
+                            TIME,
+                            TIMEZONE,
+                            IS_RETWEET,
+                            TIME_INSERTED
+                        )
+                        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                   ''', tweet_values)
 
 
 def main():
 
+    connection = psycopg2.connect(  database="digital_graveyard",
+                                    user="grabarz",
+                                    password="testpassword",
+                                    host="127.0.0.1")
+    connection.autocommit=True
+    cursor = connection.cursor()
+
     stream = connect_to_streaming_API()
     tweets = get_latest_tweets(stream)
+
     for tweet in tweets:
-        logger.log(logging.INFO, tweet)
-        save_to_db(tweet)
+        logger.info(tweet)
+
+        try:
+            save_to_db(tweet, cursor)
+
+        except psycopg2.IntegrityError as ine:
+            logger.exception(ine)
+            connection.rollback()
+            continue
+
+        except StandardError as e:
+            cursor.close()
+            connection.close()
+            logger.exception(e)
 
 
 if __name__ == '__main__':
