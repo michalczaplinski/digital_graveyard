@@ -1,4 +1,5 @@
 var express = require('express');
+var moment = require('moment');
 var router = express.Router();
 
 var knex = require('knex')({
@@ -15,6 +16,7 @@ var knex = require('knex')({
 
 /* GET tweets. */
 router.get(/^\/tweets\/([0-9]+)$/, function(req, res, next) {
+  // REMEMBER TO ADD a constraint for when we run out of tweets to show.
 
   // keep the offset low for testing
   var offset = req.params[0] * 5;
@@ -31,11 +33,27 @@ router.get(/^\/tweets\/([0-9]+)$/, function(req, res, next) {
 
     .then(function (rows) {
       // check if this is the FIRST REQUEST
+
       if (offset === 0 && !req.cookies.first_timestamp) {
         res.cookie('first_timestamp', rows[0].time_inserted );
       }
+      return rows;
+    })
+
+    .then(function (rows) {
+      // convert the postgres timestamp into ms since epoch.
+
+      rows.forEach( function(row, index, array) {
+        row.time = moment(row.time).valueOf();
+      });
+
+      return rows;
+    })
+
+    .then(function (rows) {
       res.send(JSON.stringify(rows, null, 4));
     });
+
 });
 
 

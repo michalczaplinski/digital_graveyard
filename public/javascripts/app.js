@@ -1,5 +1,6 @@
 $(document).ready(function() {
 
+
 // ADJUST THE TIME OF THE TWEET TO CLIENT'S LOCAL TIMEZONE
     function adjust_to_users_timezone (time) {
         var date = new Date();
@@ -10,7 +11,7 @@ $(document).ready(function() {
         return new_date.toLocaleString();
     }
 
-    $.getJSON('tweets.json', function(json, textStatus) {
+    $.getJSON('/api/tweets/0', function(json, textStatus) {
         console.log(textStatus);
 
         var myJSONString = JSON.stringify(json);
@@ -18,24 +19,24 @@ $(document).ready(function() {
                                               .replace(/\\'/g, "\\'")
                                               .replace(/\\"/g, '\\"');
 
-        var tweetArray = $.parseJSON(myEscapedJSONString);
+        var tweets = $.parseJSON(myEscapedJSONString);
 
-        var num_tweets = tweetArray.length;
+        // var num_tweets = tweetArray.length;
 
-        tweets = [];
+        // tweets = [];
 
-        for (var i = 0; i < tweetArray.length; i++) {
+        // for (var i = 0; i < tweetArray.length; i++) {
 
-            tweets.push({});
+        //     tweets.push({});
 
-            tweets[i].text = tweetArray[i][0];
-            tweets[i].user =  '@' + tweetArray[i][1];
-            tweets[i].time = adjust_to_users_timezone(tweetArray[i][2]);
-            tweets[i].name =  tweetArray[i][3];
+        //     tweets[i].text = tweetArray[i][0];
+        //     tweets[i].user =  '@' + tweetArray[i][1];
+        //     tweets[i].time = adjust_to_users_timezone(tweetArray[i][2]);
+        //     tweets[i].name =  tweetArray[i][3];
 
-        }
+        // }
 
-        run_graveyard(num_tweets, tweets);
+        run_graveyard(tweets);
 
         });
 });

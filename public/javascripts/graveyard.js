@@ -1,4 +1,4 @@
-function run_graveyard(num_tweets, tweetArray) {
+function run_graveyard(tweets) {
 
     if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
 
@@ -74,7 +74,31 @@ function run_graveyard(num_tweets, tweetArray) {
     var grave_material = new THREE.MeshPhongMaterial( { color: 0x000000, shininess: 80 } );
 
     var engraving_geometry = new THREE.PlaneGeometry(10, 20);
+
+
+
+
     // ADD GRAVES AND TEXT
+    tweets.forEach( function (element, index, array) {
+
+        user =  '@' + element.username;
+        time = adjust_to_users_timezone(element.time);
+
+        Object.create(Grave.prototype, {x})
+    })
+
+
+
+    // ADJUST THE TIME OF THE TWEET TO CLIENT'S LOCAL TIMEZONE
+    function adjust_to_users_timezone (time) {
+        var date = new Date();
+        var utc_offset = date.getTimezoneOffset();
+
+        var new_time = time * 1000 + utc_offset * 60000; // convert to miliseconds, get
+        var new_date = new Date(new_time);
+        return new_date.toLocaleString();
+    }
+
 
     function Grave(x, z, user, name, time) {
 
