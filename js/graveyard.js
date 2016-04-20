@@ -156,7 +156,8 @@ function run_graveyard(num_tweets, tweetArray) {
         curveSegments: 3,
         style: 'normal',
         weight: 'normal',
-        bevelEnabled : false, };
+        bevelEnabled : false
+      };
 
 
     var geometry = new THREE.BoxGeometry( 10, 30, 10);
@@ -189,7 +190,7 @@ function run_graveyard(num_tweets, tweetArray) {
         ripArray[i].receiveShadow = true;
         ripArray[i].castShadow = false;
 
-        var name_geometry = new THREE.TextGeometry(tweetArray[i].name, parameters);
+        var name_geometry = new THREE.TextGeometry(tweetArray[i][3], parameters);
         nameArray[i] = new THREE.Mesh(name_geometry, text_material);
         nameArray[i].position.x = POSITION_X - 3;
         nameArray[i].position.z = POSITION_Z + 5;
@@ -198,7 +199,7 @@ function run_graveyard(num_tweets, tweetArray) {
         nameArray[i].castShadow = true;
         nameArray[i].receiveShadow = false;
 
-        var user_geometry = new THREE.TextGeometry('@' + tweetArray[i].user, parameters);
+        var user_geometry = new THREE.TextGeometry('@' + tweetArray[i][1], parameters);
         userArray[i] = new THREE.Mesh(user_geometry, text_material);
         userArray[i].position.x = POSITION_X - 3;
         userArray[i].position.z = POSITION_Z + 5;
@@ -207,7 +208,8 @@ function run_graveyard(num_tweets, tweetArray) {
         userArray[i].castShadow = true;
         userArray[i].receiveShadow = false;
 
-        var time_geometry = new THREE.TextGeometry(tweetArray[i].time, parameters);
+        var adjusted_time = adjust_to_users_timezone(tweetArray[i][2])
+        var time_geometry = new THREE.TextGeometry(adjusted_time, parameters);
         timeArray[i] = new THREE.Mesh(time_geometry, text_material);
         timeArray[i].position.x = POSITION_X - 3;
         timeArray[i].position.z = POSITION_Z + 5;
