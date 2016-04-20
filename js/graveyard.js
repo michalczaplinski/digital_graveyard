@@ -9,7 +9,7 @@ $(document).ready(function() {
         return new_date.toLocaleString()
     }
 
-    $.getJSON('../data/tweets.json', function(json, textStatus) {
+    $.getJSON('tweets.json', function(json, textStatus) {
         console.log(textStatus)
 
         var myJSONString = JSON.stringify(json);
