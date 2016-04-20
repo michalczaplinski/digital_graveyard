@@ -372,6 +372,7 @@ function run_graveyard(num_tweets, tweetArray) {
         return data;
     }
 
+    checkZones();
 
     window.addEventListener( 'resize', onWindowResize, false );
     document.addEventListener( 'readystatechange', checkZones, false);

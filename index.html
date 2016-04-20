@@ -4,20 +4,33 @@
 
 </head>
 
+<link rel="stylesheet" type="text/css" href="static/css/pace.css">
+<script src="js/pace.js"></script>
+<script>
+  Pace.on('done', function() {
+    document.getElementById('search-bar').style.display = 'inline';
+    document.getElementById('candle').style.display = 'inline';
+    document.getElementById('flowers').style.display = 'inline';
+  });
+</script>
 <title>DIGITAL GRAVEYARD</title>
 
 </head>
-    <body>
+    <body id="body">
 
-        <div id="search-bar">
+        <div id="search-bar" style="display:none">
             <input id="field" type="text" maxlength=25 placeholder="Search..." required>
             <input id='button' type='button' value='Search'>
         </div>
 
         <div id="menu">
             <ul>
-                <li id='candle'>candle</li>
-                <li id='flowers'>flowers</li>
+                <li id="candle" class="card card-1" style="display:none">
+                  <a class="unstyled-link" href='#'>candle</a>
+                </li>
+                <li id="flowers" class="card card-1" style="display:none">
+                  <a class="unstyled-link" href="#">flowers</a>
+                </li>
             </ul>
         </div>
 
@@ -33,4 +46,5 @@
         <script src="js/graveyard.js"></script>
 
     </body>
+
 </html>
