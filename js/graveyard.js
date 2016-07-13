@@ -9,7 +9,7 @@ $(document).ready(function() {
         return new_date.toLocaleString()
     }
 
-    $.getJSON('tweets.json', function(json, textStatus) {
+    $.getJSON('http://digitalgraveyardapi-dg1.rhcloud.com/db', function(json, textStatus) {
         console.log(textStatus)
 
         var myJSONString = JSON.stringify(json);
